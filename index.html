@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Bounce Back - Chrome Dino 3D</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0b0f19;
+      font-family: 'Courier New', Courier, monospace;
+      color: #f1f5f9;
+      transition: background-color 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px 24px;
+    }
+    #navbar {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 8px 18px;
+      background: rgba(15, 18, 28, 0.90);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: auto;
+    }
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-brand {
+      font-weight: 900;
+      font-size: 15px;
+      letter-spacing: 1px;
+      color: #f1f5f9;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      transition: color 0.4s;
+    }
+    .nav-spacer {
+      flex: 1;
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #cbd5e1;
+      transition: all 0.4s ease;
+    }
+    .star-counter {
+      color: #fde047;
+      background: rgba(45, 35, 10, 0.95);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      box-shadow: 0 2px 10px rgba(251, 191, 36, 0.2);
+      cursor: default;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+    }
+    .star-counter.pulse {
+      transform: scale(1.22);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.6);
+    }
+    .speed-switcher {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      margin-left: 8px;
+    }
+    .speed-icon {
+      font-size: 13px;
+      color: #38bdf8;
+      margin-right: 2px;
+    }
+    .speed-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      padding: 3px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    .speed-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .speed-btn.active {
+      background: #0284c7;
+      color: #fff;
+      border-color: #38bdf8;
+      box-shadow: 0 0 10px rgba(2, 132, 199, 0.45);
+    }
+    #score-board {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2.5px;
+      color: #f8fafc;
+      transition: color 0.4s, transform 0.2s;
+    }
+    .score-flash {
+      color: #ff9800 !important;
+      transform: scale(1.15);
+    }
+
+    #theme-banner {
+      position: absolute;
+      top: 84px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-15px) scale(0.9);
+      background: rgba(15, 18, 25, 0.88);
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 14px;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 10;
+    }
+    #theme-banner.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+    #theme-title {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #ffb703;
+      margin-bottom: 4px;
+    }
+    #theme-sub {
+      font-size: 12px;
+      letter-spacing: 1px;
+      color: #a0aec0;
+    }
+
+    .float-score {
+      position: absolute;
+      font-size: 20px;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      pointer-events: none;
+      animation: floatUp 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      z-index: 20;
+    }
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.25);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -120px) scale(1);
+      }
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(9, 13, 23, 0.78);
+      backdrop-filter: blur(6px);
+      pointer-events: auto;
+      transition: opacity 0.3s ease;
+    }
+    #overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .title {
+      font-size: 46px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      margin-bottom: 8px;
+      color: #f8fafc;
+    }
+    .subtitle {
+      font-size: 17px;
+      margin-bottom: 24px;
+      color: #94a3b8;
+      text-align: center;
+    }
+    .start-btn {
+      padding: 14px 34px;
+      font-size: 20px;
+      font-weight: bold;
+      font-family: inherit;
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+      transition: all 0.2s ease;
+    }
+    .start-btn:hover {
+      background: #0369a1;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
+    }
+    .instructions {
+      margin-top: 24px;
+      font-size: 14px;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.6;
+    }
+    #loading-indicator {
+      position: absolute;
+      bottom: 20px;
+      left: 24px;
+      font-size: 13px;
+      color: #888;
+    }
+  </style>
+
+  <!-- Local and CDN Scripts -->
+  <script src="assets/js/three.min.js"></script>
+  <script>
+    if (typeof THREE === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
+  <script src="assets/js/GLTFLoader.js"></script>
+  <script>
+    if (typeof THREE !== 'undefined' && typeof THREE.GLTFLoader === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');
+    }
+  </script>
+
+  <!-- Embedded 3D Models: Dinosaur & Real 3D Stone (Zero CORS issues!) -->
+  <script src="assets/models/dino_model_base64.js"></script>
+  <script src="assets/models/stone_model_base64.js"></script>
+</head>
+<body>
+  <div id="game-container">
+    <div id="ui-layer">
+      <nav id="navbar">
+        <div class="nav-left">
+          <div class="nav-brand">🦖 BOUNCE BACK</div>
+          <div class="badge" id="theme-nav-badge">✦ QORAMTIR SHOM ✦</div>
+          <div class="badge" id="mode-badge">✨ SHOM REJIMI</div>
+          <div class="speed-switcher" id="speed-switcher">
+            <span class="speed-icon">⚡</span>
+            <button class="speed-btn" data-speed="0.5">0.5x</button>
+            <button class="speed-btn active" data-speed="1.0">1.0x</button>
+            <button class="speed-btn" data-speed="1.5">1.5x</button>
+          </div>
+        </div>
+        <div class="nav-spacer"></div>
+        <div class="nav-right">
+          <div class="badge star-counter" id="stars-badge">
+            <span>⭐</span>
+            <span id="star-count-text">0 ta (+0 ball)</span>
+          </div>
+          <div id="score-board">HI <span id="hi-val">00000</span>&nbsp;&nbsp;<span id="score-val">00000</span></div>
+        </div>
+      </nav>
+      <div id="loading-indicator">3D Modellar yuklanmoqda...</div>
+    </div>
+
+    <!-- Theme Toast Banner -->
+    <div id="theme-banner">
+      <div id="theme-title">✦ OLTIN VODIY ✦</div>
+      <div id="theme-sub">☀️ KUN REJIMI (0 - 300)</div>
+    </div>
+
+    <div id="overlay">
+      <div class="title" id="overlay-title">BOUNCE BACK</div>
+      <div class="subtitle" id="overlay-sub">2.5D Dino Runner: Real 3D Tosh to'siqlar va Oltin yulduzlar!</div>
+      <button class="start-btn" id="start-btn">O'YINNI BOSHLASH</button>
+      <div class="instructions">
+        <b>Boshqarish:</b><br />
+        [SPACE] yoki [TEPAGA / CLICK] = Sakrash<br />
+        [HAVODA SPACE] = <b>Bounce Back</b> (Ikkinchi sakrash)<br />
+        [PASTGA / S] = Tez sho'ng'ish (Dive)<br />
+        ⭐ <b>Yulduzchalar:</b> Har bir yulduz <b>+50 ball</b> beradi!
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Audio Synthesis via Web Audio API ---
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSound(type) {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      if (type === 'jump') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(680, now + 0.15);
+        gain.gain.setValueAtTime(0.26, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } else if (type === 'bounce') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(840, now + 0.2);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if (type === 'star') {
+        const freqs = [1046.5, 1318.5, 1568.0, 2093.0];
+        freqs.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          const t = now + idx * 0.045;
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.3, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+          osc.start(t);
+          osc.stop(t + 0.22);
+        });
+      } else if (type === 'hit') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(130, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } else if (type === 'theme') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.08);
+        osc.frequency.setValueAtTime(783.99, now + 0.16);
+        osc.frequency.setValueAtTime(1046.50, now + 0.24);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
+        osc.start(now);
+        osc.stop(now + 0.45);
+      }
+    }
+
+    const THEMES = [
+      {
+        title: "QORAMTIR SHOM",
+        dayText: "SHOM REJIMI",
+        icon: "✨",
+        isNight: false,
+        bgColor: "#0d111a",
+        skyColor: 0x121829,
+        groundColor: 0x292e3d,
+        mountainColor: 0x1c212e,
+        crystalColor: 0x59d8ff,
+        celestialColor: 0xffd98c,
+        lightColor: 0xd1dcfa,
+        lightIntensity: 0.82
+      },
+      {
+        title: "ZUMRAD TUN",
+        dayText: "ZUMRAD SHOM",
+        icon: "✨",
+        isNight: false,
+        bgColor: "#091210",
+        skyColor: 0x0a1714,
+        groundColor: 0x1f2e26,
+        mountainColor: 0x14211b,
+        crystalColor: 0x33f2a6,
+        celestialColor: 0xd9ffe0,
+        lightColor: 0xccf2e0,
+        lightIntensity: 0.78
+      },
+      {
+        title: "KIBER SHAFAQ",
+        dayText: "BINAFSHA SHOM",
+        icon: "✨",
+        isNight: false,
+        bgColor: "#140a1c",
+        skyColor: 0x170a26,
+        groundColor: 0x291e33,
+        mountainColor: 0x1c1224,
+        crystalColor: 0xff59cc,
+        celestialColor: 0xff8c73,
+        lightColor: 0xe0c0f2,
+        lightIntensity: 0.76
+      },
+      {
+        title: "KOSMIK TUN",
+        dayText: "TUN REJIMI",
+        icon: "🌙",
+        isNight: true,
+        bgColor: "#050714",
+        skyColor: 0x050817,
+        groundColor: 0x1a1f33,
+        mountainColor: 0x0f1424,
+        crystalColor: 0x00f2ff,
+        celestialColor: 0xd9f2ff,
+        lightColor: 0xa6c7ff,
+        lightIntensity: 0.70
+      },
+      {
+        title: "QONLI OY",
+        dayText: "TUN REJIMI",
+        icon: "🌙",
+        isNight: true,
+        bgColor: "#120508",
+        skyColor: 0x14050a,
+        groundColor: 0x26141a,
+        mountainColor: 0x170a0f,
+        crystalColor: 0xff4d26,
+        celestialColor: 0xff382e,
+        lightColor: 0xf2998c,
+        lightIntensity: 0.68
+      },
+      {
+        title: "KIBER TUN",
+        dayText: "TUN REJIMI",
+        icon: "🌙",
+        isNight: true,
+        bgColor: "#070614",
+        skyColor: 0x050514,
+        groundColor: 0x1c1c30,
+        mountainColor: 0x120f21,
+        crystalColor: 0xd933ff,
+        celestialColor: 0xb3d9ff,
+        lightColor: 0xbfb3ff,
+        lightIntensity: 0.70
+      }
+    ];
+
+    let state = 'READY';
+    let score = 0;
+    let starsCollected = 0;
+    let highScore = parseInt(localStorage.getItem('bounce_high_score') || '0', 10);
+    let speed = 10.5;
+    const initialSpeed = 10.5;
+    const maxSpeed = 23.0;
+
+    let spawnTimer = 0;
+    let nextSpawnTime = 1.8;
+    let starSpawnTimer = 0;
+    let nextStarSpawnTime = 1.6;
+
+    let lastThemeStep = -1;
+    let currentThemeIdx = 0;
+
+    // Compact Dinosaur Physics (Scaled to ~0.11)
+    let playerY = 0;
+    let playerVelocityY = 0;
+    const gravity = 23.0;
+    const jumpVelocity = 8.6;
+    const bounceVelocity = 12.0;
+    let canDoubleJump = false;
+    let runAnimTime = 0;
+
+    // --- Scene Setup ---
+    const container = document.getElementById('game-container');
+    const scene = new THREE.Scene();
+
+    // Adjusted Camera framing for compact scale
+    const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0.4, 1.45, 6.0);
+    camera.lookAt(0.4, 0.9, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    const hemiLight = new THREE.HemisphereLight(0xd1dcfa, 0x181a24, 0.55);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xd1dcfa, 0.82);
+    dirLight.position.set(10, 14, 10);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    // Materials
+    const matGround = new THREE.MeshStandardMaterial({ color: 0x292e3d, roughness: 0.85 });
+    const matMountain = new THREE.MeshStandardMaterial({ color: 0x1c212e, roughness: 0.9, flatShading: true });
+    const matCrystal = new THREE.MeshStandardMaterial({
+      color: 0x59d8ff,
+      emissive: 0x59d8ff,
+      emissiveIntensity: 0.9,
+      roughness: 0.2
+    });
+    const matCelestial = new THREE.MeshBasicMaterial({ color: 0xffd98c });
+
+    const matPebble = new THREE.MeshStandardMaterial({ color: 0x1a1d26, roughness: 0.9 });
+    const matPteroSkin = new THREE.MeshStandardMaterial({ color: 0x6e5847, roughness: 0.75 });
+    const matPteroBeak = new THREE.MeshStandardMaterial({ color: 0xba7942, roughness: 0.6 });
+    const matPteroWing = new THREE.MeshStandardMaterial({ color: 0x8f745c, roughness: 0.8, side: THREE.DoubleSide });
+
+    // Dainty Gold Star Material
+    const matStarGold = new THREE.MeshStandardMaterial({
+      color: 0xffdf33,
+      emissive: 0xffbb00,
+      emissiveIntensity: 1.15,
+      roughness: 0.2,
+      metalness: 0.3
+    });
+
+    // Celestial Sun / Moon
+    const celestialGeo = new THREE.SphereGeometry(1.4, 24, 24);
+    const celestialMesh = new THREE.Mesh(celestialGeo, matCelestial);
+    celestialMesh.position.set(6.5, 4.2, -9.5);
+    scene.add(celestialMesh);
+
+    // Night Stars
+    const starsGroup = new THREE.Group();
+    const starGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+    const starMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+    for (let i = 0; i < 50; i++) {
+      const s = new THREE.Mesh(starGeo, starMat);
+      s.position.set((Math.random() - 0.5) * 50, 3 + Math.random() * 4, -8 + (Math.random() - 0.5) * 3);
+      starsGroup.add(s);
+    }
+    starsGroup.visible = false;
+    scene.add(starsGroup);
+
+    // Parallax Background Layers
+    const farLayer1 = new THREE.Group();
+    const farLayer2 = new THREE.Group();
+    farLayer1.position.set(0, 0, -10);
+    farLayer2.position.set(50, 0, -10);
+
+    function buildFarMountains(group) {
+      const p1 = new THREE.Mesh(new THREE.ConeGeometry(10, 8.5, 4), matMountain);
+      p1.position.set(-12, 3.0, 0);
+      p1.rotation.y = Math.PI / 4;
+      group.add(p1);
+
+      const v = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 4.5, 6.0, 12), matMountain);
+      v.position.set(10, 2.0, 0);
+      group.add(v);
+
+      const p2 = new THREE.Mesh(new THREE.ConeGeometry(7, 6.0, 4), matMountain);
+      p2.position.set(0, 1.6, 0);
+      p2.rotation.y = Math.PI / 4;
+      group.add(p2);
+    }
+    buildFarMountains(farLayer1);
+    buildFarMountains(farLayer2);
+    scene.add(farLayer1);
+    scene.add(farLayer2);
+
+    const midLayer1 = new THREE.Group();
+    const midLayer2 = new THREE.Group();
+    midLayer1.position.set(0, 0, -5.5);
+    midLayer2.position.set(40, 0, -5.5);
+
+    function buildMidMonuments(group) {
+      const c1 = new THREE.Mesh(new THREE.ConeGeometry(0.5, 3.2, 5), matCrystal);
+      c1.position.set(-8, 1.4, 0);
+      group.add(c1);
+
+      const m1 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.5, 1.0), matMountain);
+      m1.position.set(5, 1.1, 0);
+      group.add(m1);
+
+      const c2 = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.2, 5), matCrystal);
+      c2.position.set(14, 1.0, 0);
+      group.add(c2);
+    }
+    buildMidMonuments(midLayer1);
+    buildMidMonuments(midLayer2);
+    scene.add(midLayer1);
+    scene.add(midLayer2);
+
+    const cloudsGroup = new THREE.Group();
+    const cloudGeo = new THREE.BoxGeometry(4.0, 0.9, 1.5);
+    const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+    for (let i = 0; i < 5; i++) {
+      const c = new THREE.Mesh(cloudGeo, cloudMat);
+      c.position.set((Math.random() - 0.5) * 50, 4.2 + Math.random() * 1.5, -7.5);
+      cloudsGroup.add(c);
+    }
+    scene.add(cloudsGroup);
+
+    // --- Dinosaur Player Setup (Compact ~0.11) ---
+    const playerGroup = new THREE.Group();
+    playerGroup.position.set(-2.5, 0, 0);
+    scene.add(playerGroup);
+
+    const fallbackMesh = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.45, 0.3), new THREE.MeshStandardMaterial({ color: 0x447744, roughness: 0.6 }));
+    fallbackMesh.position.y = 0.225;
+    fallbackMesh.castShadow = true;
+    playerGroup.add(fallbackMesh);
+
+    let aliceModel = null;
+    let stoneTemplate = null;
+
+    function setupDinoModel(sceneObj) {
+      aliceModel = sceneObj;
+      // Scaled down to 0.11 (compact, nimble runner dino!)
+      aliceModel.scale.set(0.11, 0.11, 0.11);
+      aliceModel.position.set(0.08, 0, 0);
+      aliceModel.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      playerGroup.remove(fallbackMesh);
+      playerGroup.add(aliceModel);
+      checkLoadingDone();
+    }
+
+    function checkLoadingDone() {
+      const ind = document.getElementById('loading-indicator');
+      if (ind && aliceModel) ind.style.display = 'none';
+    }
+
+    function base64ToArrayBuffer(base64) {
+      const binary_string = window.atob(base64);
+      const len = binary_string.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    const gltfLoader = new THREE.GLTFLoader();
+
+    // 1. Load Dinosaur Alice
+    if (window.DINO_MODEL_BASE64) {
+      try {
+        const arrayBuf = base64ToArrayBuffer(window.DINO_MODEL_BASE64);
+        gltfLoader.parse(arrayBuf, '', (gltf) => {
+          setupDinoModel(gltf.scene);
+        });
+      } catch (e) {
+        gltfLoader.load('assets/models/land_of_the_lost_2009_alice.glb', (gltf) => setupDinoModel(gltf.scene));
+      }
+    } else {
+      gltfLoader.load('assets/models/land_of_the_lost_2009_alice.glb', (gltf) => setupDinoModel(gltf.scene));
+    }
+
+    // 2. Load 3D Stone Model
+    if (window.STONE_MODEL_BASE64) {
+      try {
+        const arrayBuf = base64ToArrayBuffer(window.STONE_MODEL_BASE64);
+        gltfLoader.parse(arrayBuf, '', (gltf) => {
+          stoneTemplate = gltf.scene;
+          stoneTemplate.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+        });
+      } catch (e) {
+        gltfLoader.load('assets/models/stone.glb', (gltf) => { stoneTemplate = gltf.scene; });
+      }
+    } else {
+      gltfLoader.load('assets/models/stone.glb', (gltf) => { stoneTemplate = gltf.scene; });
+    }
+
+    // --- Ground with Moving Tiles ---
+    const groundGeo = new THREE.BoxGeometry(80, 2, 6);
+    const groundTiles = [];
+    for (let i = 0; i < 3; i++) {
+      const g = new THREE.Mesh(groundGeo, matGround);
+      g.position.set(i * 80 - 40, -1, 0);
+      g.receiveShadow = true;
+      scene.add(g);
+      groundTiles.push(g);
+    }
+
+    const pebbleGeo = new THREE.BoxGeometry(0.4, 0.04, 0.16);
+    const pebbleMat = new THREE.MeshBasicMaterial({ color: 0x8a775a });
+    const pebbles = [];
+    for (let i = 0; i < 24; i++) {
+      const p = new THREE.Mesh(pebbleGeo, pebbleMat);
+      p.position.set((Math.random() - 0.5) * 80, 0.02, (Math.random() - 0.5) * 2.5);
+      scene.add(p);
+      pebbles.push(p);
+    }
+
+    // --- Obstacles & Collectibles ---
+    const obstacles = [];
+    const stars = [];
+
+    // Dainty Compact Golden Star
+    function createStarMesh() {
+      const group = new THREE.Group();
+      group.userData = { type: 'star', points: 50, radius: 0.22 };
+
+      const pivot = new THREE.Group();
+
+      const center = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.05), matStarGold);
+      center.rotation.z = Math.PI / 4;
+      pivot.add(center);
+
+      const pointGeo = new THREE.ConeGeometry(0.07, 0.15, 4);
+      const topP = new THREE.Mesh(pointGeo, matStarGold);
+      topP.position.y = 0.13;
+      pivot.add(topP);
+
+      const botP = new THREE.Mesh(pointGeo, matStarGold);
+      botP.rotation.z = Math.PI;
+      botP.position.y = -0.13;
+      pivot.add(botP);
+
+      const rightP = new THREE.Mesh(pointGeo, matStarGold);
+      rightP.rotation.z = -Math.PI / 2;
+      rightP.position.x = 0.13;
+      pivot.add(rightP);
+
+      const leftP = new THREE.Mesh(pointGeo, matStarGold);
+      leftP.rotation.z = Math.PI / 2;
+      leftP.position.x = -0.13;
+      pivot.add(leftP);
+
+      group.add(pivot);
+      group.userData.pivot = pivot;
+
+      return group;
+    }
+
+    // Real 3D Stone Obstacle (Compact scale)
+    function createRealStone(large = false) {
+      const group = new THREE.Group();
+      const sScale = large ? 0.17 : 0.12;
+      const sHeight = large ? 0.52 : 0.36;
+      const sWidth = large ? 0.56 : 0.42;
+
+      group.userData = { type: 'hazard', width: sWidth, height: sHeight };
+
+      if (stoneTemplate) {
+        const stoneMesh = stoneTemplate.clone();
+        stoneMesh.scale.set(sScale, sScale, sScale);
+        stoneMesh.position.set(0, 1.3768 * sScale, 0);
+        group.add(stoneMesh);
+
+        if (large) {
+          const sideStone = stoneTemplate.clone();
+          sideStone.scale.set(0.09, 0.09, 0.09);
+          sideStone.position.set(0.22, 1.3768 * 0.09, 0.05);
+          group.add(sideStone);
+        }
+      } else {
+        // Fallback procedural rock if model is still compiling
+        const rockGeo = new THREE.DodecahedronGeometry(sWidth * 0.5, 0);
+        const rockMesh = new THREE.Mesh(rockGeo, matPebble);
+        rockMesh.position.y = sHeight * 0.45;
+        group.add(rockMesh);
+      }
+
+      const rock1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.08), matPebble);
+      rock1.position.set(-0.18, 0.02, 0.06);
+      group.add(rock1);
+
+      return group;
+    }
+
+    // Compact Scaled Pterosaur
+    function createRealisticPterodactyl() {
+      const group = new THREE.Group();
+      group.userData = { type: 'hazard', width: 0.65, height: 0.32, isFlying: true };
+
+      const subGroup = new THREE.Group();
+      subGroup.scale.set(0.65, 0.65, 0.65);
+
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.45, 10), matPteroSkin);
+      torso.rotation.z = Math.PI / 2;
+      torso.castShadow = true;
+      subGroup.add(torso);
+
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.26, 8), matPteroSkin);
+      neck.position.set(-0.22, 0.08, 0);
+      neck.rotation.z = Math.PI / 4;
+      subGroup.add(neck);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), matPteroSkin);
+      head.position.set(-0.32, 0.16, 0);
+      subGroup.add(head);
+
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.42, 6), matPteroBeak);
+      beak.rotation.z = Math.PI / 2;
+      beak.position.set(-0.52, 0.14, 0);
+      subGroup.add(beak);
+
+      const crest = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.38, 5), matPteroBeak);
+      crest.rotation.z = -Math.PI / 3;
+      crest.position.set(-0.24, 0.28, 0);
+      subGroup.add(crest);
+
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), eyeMat);
+      eyeL.position.set(-0.34, 0.18, 0.075);
+      subGroup.add(eyeL);
+      const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), eyeMat);
+      eyeR.position.set(-0.34, 0.18, -0.075);
+      subGroup.add(eyeR);
+
+      const wingL = new THREE.Group();
+      wingL.position.set(0, 0.03, 0.12);
+      const boneL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.65, 6), matPteroSkin);
+      boneL.rotation.x = Math.PI / 2;
+      boneL.position.set(-0.04, 0.02, 0.32);
+      wingL.add(boneL);
+
+      const membL = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.62, 3), matPteroWing);
+      membL.rotation.x = Math.PI / 2;
+      membL.rotation.y = Math.PI;
+      membL.position.set(0.1, 0, 0.32);
+      wingL.add(membL);
+      subGroup.add(wingL);
+      group.userData.wingL = wingL;
+
+      const wingR = new THREE.Group();
+      wingR.position.set(0, 0.03, -0.12);
+      const boneR = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.65, 6), matPteroSkin);
+      boneR.rotation.x = -Math.PI / 2;
+      boneR.position.set(-0.04, 0.02, -0.32);
+      wingR.add(boneR);
+
+      const membR = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.62, 3), matPteroWing);
+      membR.rotation.x = -Math.PI / 2;
+      membR.position.set(0.1, 0, -0.32);
+      wingR.add(membR);
+      subGroup.add(wingR);
+      group.userData.wingR = wingR;
+
+      group.add(subGroup);
+      return group;
+    }
+
+    function createBouncePad() {
+      const group = new THREE.Group();
+      group.userData = { type: 'bounce_pad', width: 0.7, height: 0.25 };
+
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 }));
+      base.position.y = 0.04;
+      group.add(base);
+
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.06, 16), new THREE.MeshStandardMaterial({ color: 0x00d2ff, emissive: 0x00b4d8, emissiveIntensity: 0.85 }));
+      pad.position.y = 0.1;
+      group.add(pad);
+      group.userData.pad = pad;
+
+      return group;
+    }
+
+    function spawnStar(offset_x = 0, custom_y = null) {
+      const star = createStarMesh();
+      let spawnY = custom_y;
+      if (spawnY === null) {
+        spawnY = Math.random() < 0.65 ? 1.05 : 1.85;
+      }
+      star.position.set(22 + offset_x, spawnY, 0);
+      star.userData.baseY = spawnY;
+      scene.add(star);
+      stars.push(star);
+    }
+
+    function spawnObstacle() {
+      const roll = Math.random();
+      let obs;
+      let spawnY = 0;
+
+      if (score < 80) {
+        obs = createRealStone(false);
+      } else if (score < 200) {
+        if (roll < 0.6) obs = createRealStone(false);
+        else if (roll < 0.85) obs = createRealStone(true);
+        else obs = createBouncePad();
+      } else {
+        if (roll < 0.35) obs = createRealStone(false);
+        else if (roll < 0.65) obs = createRealStone(true);
+        else if (roll < 0.86) {
+          obs = createRealisticPterodactyl();
+          spawnY = Math.random() < 0.5 ? 0.72 : 1.35;
+        } else {
+          obs = createBouncePad();
+        }
+      }
+
+      obs.position.set(22, spawnY, 0);
+      scene.add(obs);
+      obstacles.push(obs);
+
+      // Bonus star floating above stone or bounce pad
+      if (roll < 0.45 || obs.userData.type === 'bounce_pad') {
+        const starH = obs.userData.type === 'bounce_pad' ? 2.05 : 1.25;
+        spawnStar(0, starH);
+      }
+    }
+
+    function doJump() {
+      if (state !== 'PLAYING') return;
+      if (playerY <= 0.02) {
+        playerVelocityY = jumpVelocity;
+        canDoubleJump = true;
+        playSound('jump');
+      } else if (canDoubleJump) {
+        canDoubleJump = false;
+        playerVelocityY = bounceVelocity;
+        playSound('bounce');
+      }
+    }
+
+    function doDive() {
+      if (state !== 'PLAYING') return;
+      if (playerY > 0.05) playerVelocityY = -18.0;
+    }
+
+    function applyTheme(themeIdx, notify = true) {
+      currentThemeIdx = themeIdx;
+      const theme = THEMES[themeIdx];
+
+      document.body.style.backgroundColor = theme.bgColor;
+      document.body.classList.add('night-mode');
+      document.body.style.backgroundColor = theme.bgColor;
+
+      const themeNavBadge = document.getElementById('theme-nav-badge');
+      if (themeNavBadge) {
+        themeNavBadge.innerText = `✦ ${theme.title} ✦`;
+        themeNavBadge.style.color = '#' + theme.crystalColor.toString(16).padStart(6, '0');
+      }
+
+      const badge = document.getElementById('mode-badge');
+      if (badge) badge.innerText = `${theme.icon} ${theme.dayText}`;
+
+      matGround.color.setHex(theme.groundColor);
+      matMountain.color.setHex(theme.mountainColor);
+      matCrystal.color.setHex(theme.crystalColor);
+      matCrystal.emissive.setHex(theme.crystalColor);
+      matCelestial.color.setHex(theme.celestialColor);
+
+      dirLight.color.setHex(theme.lightColor);
+      dirLight.intensity = theme.lightIntensity;
+      hemiLight.intensity = 0.55;
+
+      celestialMesh.position.set(theme.isNight ? -5.5 : 6.5, 4.2, -9.5);
+      starsGroup.visible = true;
+
+      if (notify) {
+        playSound('theme');
+        const banner = document.getElementById('theme-banner');
+        const titleEl = document.getElementById('theme-title');
+        const subEl = document.getElementById('theme-sub');
+        titleEl.innerText = `✦ ${theme.title} ✦`;
+        titleEl.style.color = '#' + theme.crystalColor.toString(16).padStart(6, '0');
+        subEl.innerText = `${theme.icon} ${theme.dayText} (${themeIdx * 100} - ${(themeIdx + 1) * 100})`;
+        banner.classList.add('show');
+        setTimeout(() => banner.classList.remove('show'), 2200);
+      }
+    }
+
+    function triggerFloatingScore(points, screenX, screenY) {
+      const el = document.createElement('div');
+      el.className = 'float-score';
+      el.innerText = `+${points} ⭐`;
+      el.style.left = `${screenX}px`;
+      el.style.top = `${screenY}px`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 650);
+    }
+
+    function startGame() {
+      initAudio();
+      state = 'PLAYING';
+      score = 0;
+      starsCollected = 0;
+      speed = initialSpeed;
+      playerY = 0;
+      playerVelocityY = 0;
+      canDoubleJump = true;
+      lastThemeStep = 0;
+      spawnTimer = 0;
+      nextSpawnTime = 1.8;
+      starSpawnTimer = 0.8;
+      nextStarSpawnTime = 1.6;
+
+      for (const obs of obstacles) scene.remove(obs);
+      obstacles.length = 0;
+
+      for (const st of stars) scene.remove(st);
+      stars.length = 0;
+
+      playerGroup.position.set(-2.5, 0, 0);
+      playerGroup.rotation.set(0, 0, 0);
+
+      document.getElementById('overlay').classList.add('hidden');
+      applyTheme(0, false);
+      updateScoreUI();
+      doJump();
+    }
+
+    function gameOver() {
+      state = 'GAMEOVER';
+      playSound('hit');
+      if (score > highScore) {
+        highScore = Math.floor(score);
+        localStorage.setItem('bounce_high_score', highScore.toString());
+      }
+      document.getElementById('overlay-title').innerText = 'GAME OVER';
+      document.getElementById('overlay-sub').innerText = `SCORE: ${Math.floor(score).toString().padStart(5, '0')}   BEST: ${highScore.toString().padStart(5, '0')}   YULDUZLAR: ⭐ ${starsCollected} ta (+${starsCollected * 50} ball)`;
+      document.getElementById('start-btn').innerText = 'BOUNCE BACK (QAYTA O\'YNASH)';
+      document.getElementById('overlay').classList.remove('hidden');
+
+      playerGroup.rotation.z = -0.55;
+    }
+
+    function updateScoreUI(pulseStar = false) {
+      const hiEl = document.getElementById('hi-val');
+      const curEl = document.getElementById('score-val');
+      if (hiEl) hiEl.innerText = highScore.toString().padStart(5, '0');
+      if (curEl) curEl.innerText = Math.floor(score).toString().padStart(5, '0');
+
+      const starText = document.getElementById('star-count-text');
+      if (starText) {
+        starText.innerText = `${starsCollected} ta (+${starsCollected * 50} ball)`;
+      }
+
+      if (pulseStar) {
+        const starBadge = document.getElementById('stars-badge');
+        if (starBadge) {
+          starBadge.classList.add('pulse');
+          setTimeout(() => starBadge.classList.remove('pulse'), 250);
+        }
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        if (state === 'PLAYING') doJump();
+        else startGame();
+      } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        e.preventDefault();
+        doDive();
+      }
+    });
+
+    window.addEventListener('pointerdown', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      if (state === 'PLAYING') doJump();
+      else if (state === 'READY' || state === 'GAMEOVER') startGame();
+    });
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      startGame();
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    const tempVec = new THREE.Vector3();
+    function toScreenPosition(obj3d) {
+      obj3d.getWorldPosition(tempVec);
+      tempVec.project(camera);
+      return {
+        x: (tempVec.x * 0.5 + 0.5) * window.innerWidth,
+        y: -(tempVec.y * 0.5 - 0.5) * window.innerHeight
+      };
+    }
+
+    let speedMultiplier = 1.0;
+
+    function initSpeedControls() {
+      const buttons = document.querySelectorAll('.speed-btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetSpeed = parseFloat(btn.dataset.speed);
+          setSpeedMultiplier(targetSpeed);
+        });
+      });
+    }
+
+    function setSpeedMultiplier(mult) {
+      speedMultiplier = mult;
+      document.querySelectorAll('.speed-btn').forEach(btn => {
+        if (parseFloat(btn.dataset.speed) === mult) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    // --- Main Game Loop ---
+    let lastTime = performance.now();
+
+    function animate(currentTime) {
+      requestAnimationFrame(animate);
+
+      const delta = Math.min((currentTime - lastTime) / 1000, 0.1);
+      lastTime = currentTime;
+
+      if (state === 'PLAYING') {
+        if (speed < maxSpeed) speed += 0.15 * delta;
+
+        const effectiveSpeed = speed * speedMultiplier;
+        score += effectiveSpeed * delta * 1.2;
+        const intScore = Math.floor(score);
+
+        const themeStep = Math.floor(intScore / 100);
+        if (themeStep !== lastThemeStep && themeStep > 0) {
+          lastThemeStep = themeStep;
+          const targetThemeIdx = themeStep % THEMES.length;
+          applyTheme(targetThemeIdx, true);
+
+          const el = document.getElementById('score-board');
+          el.classList.add('score-flash');
+          setTimeout(() => el.classList.remove('score-flash'), 350);
+        }
+
+        updateScoreUI();
+
+        // Player physics
+        playerVelocityY -= gravity * delta;
+        playerY += playerVelocityY * delta;
+        if (playerY <= 0) {
+          playerY = 0;
+          playerVelocityY = 0;
+        }
+        playerGroup.position.y = playerY;
+
+        // Gallop animation
+        if (playerY <= 0.01) {
+          runAnimTime += delta * 15;
+          const bob = Math.abs(Math.sin(runAnimTime)) * 0.028;
+          const tilt = Math.sin(runAnimTime) * 0.02;
+          playerGroup.position.y = bob;
+          playerGroup.rotation.z = tilt;
+        } else {
+          playerGroup.rotation.z = Math.max(-0.25, Math.min(0.25, -playerVelocityY * 0.018));
+        }
+
+        // Scroll ground
+        for (const g of groundTiles) {
+          g.position.x -= effectiveSpeed * delta;
+          if (g.position.x <= -120) g.position.x += 240;
+        }
+
+        for (const p of pebbles) {
+          p.position.x -= effectiveSpeed * delta;
+          if (p.position.x <= -40) p.position.x += 80;
+        }
+
+        // Parallax Layers
+        farLayer1.position.x -= effectiveSpeed * delta * 0.10;
+        if (farLayer1.position.x <= -50) farLayer1.position.x += 100;
+        farLayer2.position.x -= effectiveSpeed * delta * 0.10;
+        if (farLayer2.position.x <= -50) farLayer2.position.x += 100;
+
+        midLayer1.position.x -= effectiveSpeed * delta * 0.25;
+        if (midLayer1.position.x <= -40) midLayer1.position.x += 80;
+        midLayer2.position.x -= effectiveSpeed * delta * 0.25;
+        if (midLayer2.position.x <= -40) midLayer2.position.x += 80;
+
+        cloudsGroup.position.x -= effectiveSpeed * delta * 0.05;
+        if (cloudsGroup.position.x <= -50) cloudsGroup.position.x += 100;
+
+        // Spawn Obstacles
+        spawnTimer += delta;
+        if (spawnTimer >= nextSpawnTime) {
+          spawnTimer = 0;
+          spawnObstacle();
+          const speedFactor = Math.min(2.8, Math.max(0.5, effectiveSpeed / initialSpeed));
+          nextSpawnTime = (1.1 + Math.random() * 1.3) / speedFactor;
+        }
+
+        // Spawn Stars in the air
+        starSpawnTimer += delta;
+        if (starSpawnTimer >= nextStarSpawnTime) {
+          starSpawnTimer = 0;
+          spawnStar();
+          const speedFactor = Math.min(2.8, Math.max(0.5, effectiveSpeed / initialSpeed));
+          nextStarSpawnTime = (1.5 + Math.random() * 1.6) / speedFactor;
+        }
+
+        // Move and Check Stars Collection
+        for (let i = stars.length - 1; i >= 0; i--) {
+          const st = stars[i];
+          st.position.x -= effectiveSpeed * delta;
+
+          if (st.userData.pivot) {
+            st.userData.pivot.rotation.y += delta * 4.5;
+            st.userData.pivot.rotation.z = Math.sin(currentTime * 0.004) * 0.18;
+          }
+          st.position.y = st.userData.baseY + Math.sin(currentTime * 0.005) * 0.08;
+
+          // Player AABB check with compact dino
+          const playerBox = {
+            minX: playerGroup.position.x - 0.32,
+            maxX: playerGroup.position.x + 0.32,
+            minY: playerGroup.position.y,
+            maxY: playerGroup.position.y + 0.45
+          };
+          const starBox = {
+            minX: st.position.x - 0.22,
+            maxX: st.position.x + 0.22,
+            minY: st.position.y - 0.22,
+            maxY: st.position.y + 0.22
+          };
+
+          const overlapX = playerBox.maxX > starBox.minX && playerBox.minX < starBox.maxX;
+          const overlapY = playerBox.maxY > starBox.minY && playerBox.minY < starBox.maxY;
+
+          if (overlapX && overlapY) {
+            score += 50;
+            starsCollected++;
+            playSound('star');
+            updateScoreUI(true);
+
+            const screenPos = toScreenPosition(st);
+            triggerFloatingScore(50, screenPos.x, screenPos.y);
+
+            const scoreEl = document.getElementById('score-board');
+            scoreEl.classList.add('score-flash');
+            setTimeout(() => scoreEl.classList.remove('score-flash'), 300);
+
+            scene.remove(st);
+            stars.splice(i, 1);
+            continue;
+          }
+
+          if (st.position.x < -22) {
+            scene.remove(st);
+            stars.splice(i, 1);
+          }
+        }
+
+        // Move and collide obstacles
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+          const obs = obstacles[i];
+          obs.position.x -= effectiveSpeed * delta;
+
+          if (obs.userData.isFlying && obs.userData.wingL && obs.userData.wingR) {
+            const flap = Math.sin(currentTime * 0.012) * 0.42;
+            const pitch = Math.cos(currentTime * 0.012) * 0.12;
+            obs.userData.wingL.rotation.z = flap;
+            obs.userData.wingL.rotation.x = pitch;
+            obs.userData.wingR.rotation.z = -flap;
+            obs.userData.wingR.rotation.x = pitch;
+          }
+
+          const playerBox = {
+            minX: playerGroup.position.x - 0.32,
+            maxX: playerGroup.position.x + 0.32,
+            minY: playerGroup.position.y,
+            maxY: playerGroup.position.y + 0.45
+          };
+          const obsBox = {
+            minX: obs.position.x - obs.userData.width * 0.5,
+            maxX: obs.position.x + obs.userData.width * 0.5,
+            minY: obs.position.y,
+            maxY: obs.position.y + obs.userData.height
+          };
+
+          const overlapX = playerBox.maxX > obsBox.minX && playerBox.minX < obsBox.maxX;
+          const overlapY = playerBox.maxY > obsBox.minY && playerBox.minY < obsBox.maxY;
+
+          if (overlapX && overlapY) {
+            if (obs.userData.type === 'hazard') {
+              gameOver();
+              break;
+            } else if (obs.userData.type === 'bounce_pad') {
+              playerVelocityY = bounceVelocity * 1.2;
+              canDoubleJump = true;
+              score += 20;
+              playSound('bounce');
+              if (obs.userData.pad) {
+                obs.userData.pad.position.y = 0.18;
+                setTimeout(() => { if (obs.userData.pad) obs.userData.pad.position.y = 0.1; }, 100);
+              }
+            }
+          }
+
+          if (obs.position.x < -22) {
+            scene.remove(obs);
+            obstacles.splice(i, 1);
+          }
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    initSpeedControls();
+    applyTheme(0, false);
+    updateScoreUI();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
